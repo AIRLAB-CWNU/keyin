@@ -1,0 +1,55 @@
+{
+  "": {
+    "dependencies": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/ShiftSpaceMac.d",
+    "object": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/ShiftSpaceMac.o",
+    "swift-dependencies": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/master.swiftdeps"
+  },
+  "/Users/jcha/Dev/keyin/Sources/ShiftSpaceMac/AppDelegate.swift": {
+    "object": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/AppDelegate.swift.o",
+    "swiftmodule": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/AppDelegate~partial.swiftmodule",
+    "swift-dependencies": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/AppDelegate.swiftdeps",
+    "diagnostics": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/AppDelegate.dia"
+  },
+  "/Users/jcha/Dev/keyin/Sources/ShiftSpaceMac/Managers/InputMonitorManager.swift": {
+    "object": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/InputMonitorManager.swift.o",
+    "swiftmodule": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/InputMonitorManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/InputMonitorManager.swiftdeps",
+    "diagnostics": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/InputMonitorManager.dia"
+  },
+  "/Users/jcha/Dev/keyin/Sources/ShiftSpaceMac/Managers/LaunchAgentManager.swift": {
+    "object": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/LaunchAgentManager.swift.o",
+    "swiftmodule": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/LaunchAgentManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/LaunchAgentManager.swiftdeps",
+    "diagnostics": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/LaunchAgentManager.dia"
+  },
+  "/Users/jcha/Dev/keyin/Sources/ShiftSpaceMac/Managers/MenuBarManager.swift": {
+    "object": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/MenuBarManager.swift.o",
+    "swiftmodule": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/MenuBarManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/MenuBarManager.swiftdeps",
+    "diagnostics": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/MenuBarManager.dia"
+  },
+  "/Users/jcha/Dev/keyin/Sources/ShiftSpaceMac/Managers/PanelOverlayManager.swift": {
+    "object": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/PanelOverlayManager.swift.o",
+    "swiftmodule": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/PanelOverlayManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/PanelOverlayManager.swiftdeps",
+    "diagnostics": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/PanelOverlayManager.dia"
+  },
+  "/Users/jcha/Dev/keyin/Sources/ShiftSpaceMac/Managers/PermissionManager.swift": {
+    "object": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/PermissionManager.swift.o",
+    "swiftmodule": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/PermissionManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/PermissionManager.swiftdeps",
+    "diagnostics": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/PermissionManager.dia"
+  },
+  "/Users/jcha/Dev/keyin/Sources/ShiftSpaceMac/Managers/TISSwitchManager.swift": {
+    "object": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/TISSwitchManager.swift.o",
+    "swiftmodule": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/TISSwitchManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/TISSwitchManager.swiftdeps",
+    "diagnostics": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/TISSwitchManager.dia"
+  },
+  "/Users/jcha/Dev/keyin/Sources/ShiftSpaceMac/main.swift": {
+    "object": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/main.swift.o",
+    "swiftmodule": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/main~partial.swiftmodule",
+    "swift-dependencies": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/main.swiftdeps",
+    "diagnostics": "/Users/jcha/Dev/keyin/.build/arm64-apple-macosx/release/ShiftSpaceMac.build/main.dia"
+  }
+}
