@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- ═══════════════════════════════════════════════════════
+         LSUIElement = YES
+         ─────────────────────────────────────────────────────
+         이 키를 YES로 설정하면 앱이 "에이전트 앱"으로 작동합니다.
+         - Dock에 아이콘이 표시되지 않음
+         - Cmd+Tab 앱 전환 목록에 나타나지 않음
+         - 메뉴바 아이콘(NSStatusItem)으로만 존재
+         ═══════════════════════════════════════════════════════ -->
+    <key>LSUIElement</key>
+    <true/>
+
+    <key>CFBundleIdentifier</key>
+    <string>com.keyin.ShiftSpaceMac</string>
+
+    <key>CFBundleName</key>
+    <string>ShiftSpaceMac</string>
+
+    <key>CFBundleDisplayName</key>
+    <string>ShiftSpaceMac</string>
+
+    <key>CFBundleVersion</key>
+    <string>1.0.0</string>
+
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+
+    <key>CFBundleExecutable</key>
+    <string>ShiftSpaceMac</string>
+
+    <key>NSHumanReadableCopyright</key>
+    <string>Copyright © 2026 keyin. All rights reserved.</string>
+
+    <!-- ═══════════════════════════════════════════════════════
+         접근성 권한 요청 시 사용자에게 표시되는 설명 텍스트
+         ═══════════════════════════════════════════════════════ -->
+    <key>NSAccessibilityUsageDescription</key>
+    <string>ShiftSpaceMac은 텍스트 커서 위치를 추적하고 한영 전환 상태를 표시하기 위해 접근성 권한이 필요합니다.</string>
+</dict>
+</plist>
