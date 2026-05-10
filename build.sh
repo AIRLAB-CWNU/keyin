@@ -55,6 +55,13 @@ case "${1:-build}" in
     # Info.plist 복사
     cp "Sources/ShiftSpaceMac/Resources/Info.plist" "${APP_DIR}/Contents/"
 
+    # 앱 아이콘 (없으면 생성)
+    if [ ! -f "Sources/ShiftSpaceMac/Resources/AppIcon.icns" ]; then
+      echo "🎨 AppIcon.icns 미존재 — 생성 중..."
+      ./scripts/build_icon.sh
+    fi
+    cp "Sources/ShiftSpaceMac/Resources/AppIcon.icns" "${APP_DIR}/Contents/Resources/"
+
     echo "✅ .app 번들 생성 완료: ${APP_DIR}"
     echo ""
     echo "──────────────────────────────────────────────────"

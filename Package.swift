@@ -15,7 +15,7 @@ let package = Package(
         .executableTarget(
             name: "ShiftSpaceMac",
             path: "Sources/ShiftSpaceMac",
-            exclude: ["Resources/Info.plist"],
+            exclude: ["Resources/Info.plist", "Resources/AppIcon.icns"],
             linkerSettings: [
                 // Carbon 프레임워크: TISCreateInputSourceList, TISSelectInputSource 등
                 // 입력 소스 관리를 위해 반드시 필요
