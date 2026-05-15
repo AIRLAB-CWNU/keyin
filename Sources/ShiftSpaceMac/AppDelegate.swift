@@ -42,7 +42,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         // 4) 권한 확인 후 시작
-        if permissionManager.checkAccessibilityPermission() {
+        let hasPermission = permissionManager.checkAccessibilityPermission()
+        print("[ShiftSpaceMac] 실행 경로: \(Bundle.main.executablePath ?? ProcessInfo.processInfo.arguments[0])")
+        print("[ShiftSpaceMac] 접근성 권한: \(hasPermission ? "✅ 허용됨" : "❌ 거부됨")")
+        if hasPermission {
             startMonitoring()
         } else {
             // 권한이 없으면 안내 후 대기

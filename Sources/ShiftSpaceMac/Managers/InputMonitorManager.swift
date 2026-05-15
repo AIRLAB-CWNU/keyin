@@ -8,12 +8,17 @@
 import Foundation
 import CoreGraphics
 
+/// TISSwitchManager가 post하는 가상 키 이벤트를 식별하기 위한 태그.
+/// CGEvent의 `.eventSourceUserData` 필드에 박혀, 우리 탭이 자기 자신이
+/// 합성한 이벤트를 다시 트리거로 처리하는 자기 루프를 차단한다.
+let kShiftSpaceSyntheticEventTag: Int64 = 0x53534D41  // 'SSMA'
+
 final class InputMonitorManager {
 
     private let onShiftSpaceTriggered: () -> Void
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
-    private var isShiftPressed = false
+    fileprivate var isShiftPressed = false
 
     init(onShiftSpaceTriggered: @escaping () -> Void) {
         self.onShiftSpaceTriggered = onShiftSpaceTriggered
@@ -83,6 +88,8 @@ final class InputMonitorManager {
         }
 
         // FlagsChanged: Shift 키 상태 추적
+        // (keyDown 이벤트의 flags가 환경/입력기에 따라 modifier 비트를
+        //  포함하지 않을 수 있으므로 별도 상태로 캐시한다)
         if type == .flagsChanged {
             let flags = event.flags
             mgr.isShiftPressed = flags.contains(.maskShift)
@@ -92,16 +99,33 @@ final class InputMonitorManager {
             return Unmanaged.passUnretained(event)
         }
 
-        // KeyDown: Space(49) + Shift → 트리거
-        if type == .keyDown {
-            let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
-            if keyCode == 49 && mgr.isShiftPressed {
-                print("[InputMonitor] 🎯 Shift+Space 감지!")
-                mgr.onShiftSpaceTriggered()
-                return nil  // 이벤트 소비 (Space 입력 차단)
-            }
+        guard type == .keyDown else {
+            return Unmanaged.passUnretained(event)
         }
 
-        return Unmanaged.passUnretained(event)
+        // 우리가 post한 합성 이벤트는 그대로 통과시킨다.
+        // 그렇지 않으면 가상 키가 우리 탭을 다시 트리거하여
+        // 토글 → 즉시 복귀의 무한 루프가 발생한다.
+        let userData = event.getIntegerValueField(.eventSourceUserData)
+        if userData == kShiftSpaceSyntheticEventTag {
+            return Unmanaged.passUnretained(event)
+        }
+
+        // KeyDown: Space(49) + Shift → 트리거
+        let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
+        guard keyCode == 49 && mgr.isShiftPressed else {
+            return Unmanaged.passUnretained(event)
+        }
+
+        // autorepeat 이벤트는 소비만 하고 트리거하지 않는다.
+        // (Shift+Space를 꾹 누르고 있어도 토글이 연사되지 않게 함)
+        let isAutoRepeat = event.getIntegerValueField(.keyboardEventAutorepeat) != 0
+        if isAutoRepeat {
+            return nil
+        }
+
+        print("[InputMonitor] 🎯 Shift+Space 감지!")
+        mgr.onShiftSpaceTriggered()
+        return nil  // 이벤트 소비 (Space 입력 차단)
     }
 }

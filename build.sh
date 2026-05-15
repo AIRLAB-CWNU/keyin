@@ -22,12 +22,14 @@ case "${1:-build}" in
   build)
     echo "🔨 Debug 빌드 중..."
     swift build
+    codesign --force --sign - "${BUILD_DIR}/debug/${PROJECT_NAME}" 2>/dev/null || true
     echo "✅ 빌드 완료: ${BUILD_DIR}/debug/${PROJECT_NAME}"
     ;;
 
   run)
     echo "🔨 빌드 후 실행..."
     swift build
+    codesign --force --sign - "${BUILD_DIR}/debug/${PROJECT_NAME}" 2>/dev/null || true
     echo "🚀 실행 중..."
     "${BUILD_DIR}/debug/${PROJECT_NAME}"
     ;;
@@ -61,6 +63,9 @@ case "${1:-build}" in
       ./scripts/build_icon.sh
     fi
     cp "Sources/ShiftSpaceMac/Resources/AppIcon.icns" "${APP_DIR}/Contents/Resources/"
+
+    # Ad-hoc 서명 (TCC 권한 식별 안정화)
+    codesign --force --deep --sign - "${APP_DIR}" 2>/dev/null || true
 
     echo "✅ .app 번들 생성 완료: ${APP_DIR}"
     echo ""

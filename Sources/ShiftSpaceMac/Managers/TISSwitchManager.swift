@@ -122,6 +122,12 @@ final class TISSwitchManager {
             keyDown: true
         ) else { return }
         keyDown.flags = modifiers
+        // InputMonitorManager가 자기 합성 이벤트를 식별하여 자기 루프를
+        // 끊을 수 있도록 태그를 박는다.
+        keyDown.setIntegerValueField(
+            .eventSourceUserData,
+            value: kShiftSpaceSyntheticEventTag
+        )
 
         guard let keyUp = CGEvent(
             keyboardEventSource: source,
@@ -129,9 +135,16 @@ final class TISSwitchManager {
             keyDown: false
         ) else { return }
         keyUp.flags = modifiers
+        keyUp.setIntegerValueField(
+            .eventSourceUserData,
+            value: kShiftSpaceSyntheticEventTag
+        )
 
-        keyDown.post(tap: .cgSessionEventTap)
-        keyUp.post(tap: .cgSessionEventTap)
+        // HID 레벨에 주입 → 시스템 핫키(입력소스 전환) 핸들러가 처리한다.
+        // .cgSessionEventTap에 post하면 핫키 처리 단계를 우회하여
+        // 합성 이벤트가 그냥 포커스된 앱에 스페이스 문자로 전달돼 버린다.
+        keyDown.post(tap: .cghidEventTap)
+        keyUp.post(tap: .cghidEventTap)
 
         print("[TISSwitch] 🔄 가상 키 전송 keyCode=\(virtualKey) flags=0x\(String(modifiers.rawValue, radix: 16))")
     }
