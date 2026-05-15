@@ -109,7 +109,6 @@ final class MenuBarManager {
         }
 
         autoLaunchMenuItem.state = launchAgentManager.isEnabled() ? .on : .off
-        print("[MenuBarManager] 자동 실행: \(launchAgentManager.isEnabled() ? "활성화" : "비활성화")")
     }
 
     @objc private func openAccessibility() {

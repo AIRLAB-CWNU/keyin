@@ -145,7 +145,5 @@ final class TISSwitchManager {
         // 합성 이벤트가 그냥 포커스된 앱에 스페이스 문자로 전달돼 버린다.
         keyDown.post(tap: .cghidEventTap)
         keyUp.post(tap: .cghidEventTap)
-
-        print("[TISSwitch] 🔄 가상 키 전송 keyCode=\(virtualKey) flags=0x\(String(modifiers.rawValue, radix: 16))")
     }
 }
