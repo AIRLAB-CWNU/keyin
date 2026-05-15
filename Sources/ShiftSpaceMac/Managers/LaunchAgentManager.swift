@@ -57,8 +57,6 @@ final class LaunchAgentManager {
 
         // 2. plist 파일 삭제
         try? FileManager.default.removeItem(at: plistPath)
-
-        print("[LaunchAgent] 자동 실행 비활성화")
     }
 
     // ── plist 파일 생성 및 등록 ───────────────────────────────
@@ -94,14 +92,12 @@ final class LaunchAgentManager {
         )
 
         guard let data = data else {
-            print("[LaunchAgent] ❌ plist 직렬화 실패")
             return
         }
 
         do {
             try data.write(to: plistPath)
         } catch {
-            print("[LaunchAgent] ❌ plist 파일 쓰기 실패: \(error)")
             return
         }
 
@@ -115,7 +111,5 @@ final class LaunchAgentManager {
         ]
         try? process.run()
         process.waitUntilExit()
-
-        print("[LaunchAgent] ✅ 자동 실행 활성화: \(plistPath.path)")
     }
 }

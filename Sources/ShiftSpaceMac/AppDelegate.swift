@@ -22,8 +22,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     // ── 앱 시작 ──────────────────────────────────────────────
     func applicationDidFinishLaunching(_ notification: Notification) {
-        print("[ShiftSpaceMac] 앱 시작")
-
         // 1) 매니저 초기화 (의존성 없는 것부터)
         permissionManager = PermissionManager()
         launchAgentManager = LaunchAgentManager()
@@ -42,10 +40,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         // 4) 권한 확인 후 시작
-        let hasPermission = permissionManager.checkAccessibilityPermission()
-        print("[ShiftSpaceMac] 실행 경로: \(Bundle.main.executablePath ?? ProcessInfo.processInfo.arguments[0])")
-        print("[ShiftSpaceMac] 접근성 권한: \(hasPermission ? "✅ 허용됨" : "❌ 거부됨")")
-        if hasPermission {
+        if permissionManager.checkAccessibilityPermission() {
             startMonitoring()
         } else {
             // 권한이 없으면 안내 후 대기
@@ -70,7 +65,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         inputMonitorManager?.stopMonitoring()
         panelOverlayManager?.hide()
-        print("[ShiftSpaceMac] 앱 종료")
     }
 
     // ── 권한 폴링 ────────────────────────────────────────────
@@ -87,7 +81,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             if self.permissionManager.checkAccessibilityPermission() {
                 timer.invalidate()
                 self.permissionTimer = nil
-                print("[ShiftSpaceMac] 접근성 권한 허용됨 — 모니터링 시작")
                 self.startMonitoring()
             }
         }
@@ -96,7 +89,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // ── 모니터링 시작 ────────────────────────────────────────
     private func startMonitoring() {
         inputMonitorManager.startMonitoring()
-        print("[ShiftSpaceMac] 전역 키보드 모니터링 활성화")
     }
 
     // ── Shift+Space 트리거 핸들러 ────────────────────────────
