@@ -9,6 +9,10 @@
 #   ./build.sh run      # 빌드 후 실행
 #   ./build.sh release  # 릴리즈 빌드
 #   ./build.sh app      # .app 번들 생성
+#
+# 환경변수:
+#   CODESIGN_IDENTITY   서명에 쓸 인증서 (기본 "-" = ad-hoc)
+#   UNIVERSAL=1         Intel+Apple Silicon 유니버설 빌드 (타 맥 배포용)
 
 set -euo pipefail
 
@@ -50,7 +54,19 @@ case "${1:-build}" in
     echo "📦 .app 번들 생성 중..."
 
     # 릴리즈 빌드
-    swift build -c release
+    # UNIVERSAL=1 이면 Intel + Apple Silicon 유니버설 바이너리로 빌드한다.
+    # 기본(호스트 전용) 빌드는 arm64 맥에서 만들면 arm64 전용이 되어
+    # Intel 맥으로 복사했을 때 아예 실행되지 않는다 (Rosetta로도 불가).
+    # 다른 맥에 배포할 목적이면 UNIVERSAL=1을 쓸 것.
+    if [ "${UNIVERSAL:-0}" = "1" ]; then
+      echo "   (유니버설: arm64 + x86_64)"
+      swift build -c release --arch arm64 --arch x86_64
+      # --arch를 주면 산출물 경로가 .build/apple/Products/Release/ 로 바뀐다
+      PRODUCT=".build/apple/Products/Release/${PROJECT_NAME}"
+    else
+      swift build -c release
+      PRODUCT="${BUILD_DIR}/release/${PROJECT_NAME}"
+    fi
 
     # .app 번들 디렉토리 구조 생성
     rm -rf "${APP_DIR}"
@@ -58,7 +74,7 @@ case "${1:-build}" in
     mkdir -p "${APP_DIR}/Contents/Resources"
 
     # 실행 파일 복사
-    cp "${BUILD_DIR}/release/${PROJECT_NAME}" "${APP_DIR}/Contents/MacOS/"
+    cp "${PRODUCT}" "${APP_DIR}/Contents/MacOS/"
 
     # Info.plist 복사
     cp "Sources/ShiftSpaceMac/Resources/Info.plist" "${APP_DIR}/Contents/"
@@ -74,6 +90,7 @@ case "${1:-build}" in
     codesign --force --deep --sign "${CODESIGN_IDENTITY}" "${APP_DIR}"
 
     echo "✅ .app 번들 생성 완료: ${APP_DIR}"
+    echo "   아키텍처: $(lipo -archs "${APP_DIR}/Contents/MacOS/${PROJECT_NAME}")"
     echo ""
     echo "──────────────────────────────────────────────────"
     if [ "${CODESIGN_IDENTITY}" = "-" ]; then

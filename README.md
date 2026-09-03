@@ -66,6 +66,26 @@ open build/ShiftSpaceMac.app
 > 이미 권한이 꼬였다면 초기화 후 다시 승인하세요:
 > `tccutil reset Accessibility com.keyin.ShiftSpaceMac`
 
+## 📦 다른 맥으로 옮기기
+
+`.app`을 복사만 하면 대개 동작하지 않습니다. 아래를 순서대로 확인하세요.
+진단 스크립트가 이 항목들을 자동으로 점검합니다:
+
+```bash
+./scripts/diagnose.sh /Applications/ShiftSpaceMac.app
+```
+
+| 확인 항목 | 증상 | 해결 |
+|---|---|---|
+| **아키텍처** | 아예 실행되지 않음 | Apple Silicon에서 만든 기본 빌드는 **arm64 전용**이라 Intel 맥에서 Rosetta로도 실행 불가. `UNIVERSAL=1 ./build.sh app` 으로 빌드 |
+| **접근성 권한** | 앱은 뜨는데 Shift+Space 무반응 | 맥마다 따로 승인해야 함. TCC는 머신 간에 공유되지 않음 |
+| **격리 속성** | "확인할 수 없는 개발자" 경고 | AirDrop·다운로드로 옮기면 quarantine이 붙음 → `xattr -dr com.apple.quarantine <경로>` |
+| **LaunchAgent 경로** | 로그인 시 자동 실행이 안 되거나 엉뚱한 앱이 뜸 | plist에 **원본 맥의 절대 경로**가 박혀 있음. 메뉴바에서 자동 실행을 껐다 켜서 재등록 |
+| **인스턴스 중복** | 전환이 되다 말다 함 | 두 사본이 동시에 실행되면 서로 이벤트를 가로챔. `pgrep -fl ShiftSpaceMac`로 1개인지 확인 |
+| **입력 소스 구성** | 감지는 되는데 전환이 안 됨 | 대상 맥에 한국어 입력 소스가 있어야 하고, 시스템 단축키 **'이전 입력 소스 선택'이 활성**이어야 함 (이 앱은 그 단축키를 재생하는 방식) |
+
+> 이 앱은 공증(notarization)되지 않았습니다. 개인 용도로 직접 빌드해 쓰는 것을 전제로 합니다.
+
 ## 📁 프로젝트 구조
 
 ```
@@ -79,6 +99,11 @@ Sources/ShiftSpaceMac/
     ├── PanelOverlayManager.swift   # NSPanel 투명 오버레이
     ├── PermissionManager.swift     # 접근성 권한 관리
     └── LaunchAgentManager.swift    # 로그인 시 자동 실행
+
+scripts/
+├── diagnose.sh                 # 동작하지 않을 때 원인 진단
+├── build_icon.sh               # AppIcon.icns 생성
+└── generate_icon.swift         # 아이콘 마스터 PNG 생성
 ```
 
 ## ⚙️ 아키텍처
