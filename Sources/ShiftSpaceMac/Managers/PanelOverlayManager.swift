@@ -144,6 +144,12 @@ final class PanelOverlayManager {
     // ── 텍스트 커서(Caret) 위치 가져오기 (Accessibility API) ──
     // AXUIElement를 사용하여 현재 포커스된 앱의 텍스트 필드에서
     // 캐럿(커서)의 화면 좌표를 가져온다.
+    //
+    // ⚠️ 이 함수는 추적 타이머에 의해 주기적으로, 그것도 임의의 서드파티
+    //    앱을 상대로 호출된다. AX API는 `.success`를 반환하면서도 기대와
+    //    다른 타입의 값을 돌려줄 수 있다. CF 타입은 `as?`가 런타임 검사
+    //    없이 통과할 수 있으므로, CFGetTypeID로 명시 확인한 뒤에만 캐스팅
+    //    한다. 검사 없는 강제 언래핑은 곧 앱 전체의 크래시를 뜻한다.
     private func getCaretPosition() -> NSPoint? {
         // 1. 현재 포커스된 앱 가져오기
         let systemWide = AXUIElementCreateSystemWide()
@@ -153,17 +159,21 @@ final class PanelOverlayManager {
             systemWide,
             kAXFocusedApplicationAttribute as CFString,
             &focusedApp
-        ) == .success else { return nil }
+        ) == .success,
+        let appRef = focusedApp,
+        CFGetTypeID(appRef) == AXUIElementGetTypeID() else { return nil }
+        let appElement = appRef as! AXUIElement
 
         // 2. 포커스된 UI 요소 가져오기
         var focusedElement: AnyObject?
         guard AXUIElementCopyAttributeValue(
-            focusedApp as! AXUIElement,
+            appElement,
             kAXFocusedUIElementAttribute as CFString,
             &focusedElement
-        ) == .success else { return nil }
-
-        let element = focusedElement as! AXUIElement
+        ) == .success,
+        let elementRef = focusedElement,
+        CFGetTypeID(elementRef) == AXUIElementGetTypeID() else { return nil }
+        let element = elementRef as! AXUIElement
 
         // 3. 선택 범위에서 캐럿 위치 인덱스 가져오기
         var selectedRange: AnyObject?
@@ -171,37 +181,43 @@ final class PanelOverlayManager {
             element,
             kAXSelectedTextRangeAttribute as CFString,
             &selectedRange
-        ) == .success else { return nil }
+        ) == .success,
+        let range = selectedRange else { return nil }
 
         // 4. 캐럿 인덱스의 화면 좌표 가져오기
         var caretBounds: AnyObject?
         guard AXUIElementCopyParameterizedAttributeValue(
             element,
             kAXBoundsForRangeParameterizedAttribute as CFString,
-            selectedRange!,
+            range,
             &caretBounds
-        ) == .success else { return nil }
+        ) == .success,
+        let boundsRef = caretBounds,
+        CFGetTypeID(boundsRef) == AXValueGetTypeID() else { return nil }
+        let boundsValue = boundsRef as! AXValue
 
         // AXValue에서 CGRect 추출
+        // (타입이 .cgRect가 아니면 AXValueGetValue가 false를 반환한다)
         var rect = CGRect.zero
-        guard AXValueGetValue(
-            caretBounds as! AXValue,
-            .cgRect,
-            &rect
-        ) else { return nil }
+        guard AXValueGetValue(boundsValue, .cgRect, &rect) else { return nil }
 
-        // 커서 위치: rect의 왼쪽 하단
+        // 커서 위치: rect의 오른쪽 아래 모서리 (AX 좌표계 = 좌상단 원점)
         return NSPoint(x: rect.origin.x + rect.width, y: rect.origin.y + rect.height)
     }
 
     // ── 좌표 변환 ────────────────────────────────────────────
-    // AX API는 좌상단 원점(top-left origin) 좌표계를 사용하지만,
+    // AX API는 좌상단 원점(top-left origin)의 전역 좌표계를 사용하지만,
     // AppKit/NSPanel은 좌하단 원점(bottom-left origin)을 사용한다.
-    // 스크린 높이를 기준으로 Y축을 뒤집어야 한다.
+    //
+    // ⚠️ 뒤집기의 기준은 반드시 "주 화면"(메뉴바가 있는 화면)이어야 한다.
+    //    두 좌표계 모두 원점이 주 화면에 고정돼 있으므로, 캐럿이 어느
+    //    모니터에 있든 주 화면의 maxY 하나로 변환이 성립한다.
+    //    NSScreen.main은 "키 윈도우가 있는 화면"이라 키 윈도우가 없는
+    //    에이전트 앱에서는 값이 예측 불가하며, 다중 모니터에서 인디케이터가
+    //    엉뚱한 위치에 뜨는 원인이 된다.
     private func convertToScreenCoordinates(_ point: NSPoint) -> NSPoint {
-        guard let screen = NSScreen.main else { return point }
-        let screenHeight = screen.frame.height
-        return NSPoint(x: point.x, y: screenHeight - point.y)
+        guard let primaryScreen = NSScreen.screens.first else { return point }
+        return NSPoint(x: point.x, y: primaryScreen.frame.maxY - point.y)
     }
 
     // ── 마우스/커서 추적 타이머 ────────────────────────────────

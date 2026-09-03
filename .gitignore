@@ -1,0 +1,14 @@
+# ── Swift Package Manager ──────────────────────────────────
+.build/
+.swiftpm/
+
+# ── Xcode ─────────────────────────────────────────────────
+DerivedData/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+
+# ── 빌드 산출물 (.app 번들) ────────────────────────────────
+build/
+
+# ── macOS ─────────────────────────────────────────────────
+.DS_Store
