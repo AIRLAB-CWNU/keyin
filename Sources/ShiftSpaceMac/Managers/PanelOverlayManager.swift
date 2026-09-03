@@ -15,6 +15,22 @@ final class PanelOverlayManager {
     private var label: NSTextField!
     private var mouseTrackingTimer: Timer?
 
+    /// 의도된 표시 상태. `panel.isVisible`은 페이드아웃 애니메이션이
+    /// 끝나기 전까지 true로 남아 있어 show/hide가 빠르게 교차할 때
+    /// 판정 기준으로 쓸 수 없다. (Shift+Space 연타 시 인디케이터가
+    /// 사라지던 원인)
+    private var isShowing = false
+
+    /// systemWide AX 요소는 한 번만 만들어 재사용한다.
+    /// 여기에 설정한 메시징 타임아웃이 이 프로세스가 만드는 모든 AX
+    /// 요소의 기본값이 되므로, 응답 없는 앱을 만나도 메인 스레드가
+    /// 무한정 물리지 않는다.
+    private let systemWideElement: AXUIElement = {
+        let element = AXUIElementCreateSystemWide()
+        AXUIElementSetMessagingTimeout(element, 0.1)
+        return element
+    }()
+
     // 오버레이 크기 및 오프셋
     private let overlaySize = NSSize(width: 24, height: 24)
     private let cursorOffset = NSPoint(x: 12, y: -4)  // 커서 우측 하단
@@ -85,14 +101,16 @@ final class PanelOverlayManager {
 
     // ── 오버레이 표시 ────────────────────────────────────────
     func show() {
-        guard !panel.isVisible else {
+        guard !isShowing else {
             updatePosition()
             return
         }
+        isShowing = true
 
         updatePosition()
 
         // 페이드인 애니메이션
+        // (페이드아웃 도중이었다면 진행 중인 애니메이션을 덮어쓴다)
         panel.alphaValue = 0
         panel.orderFrontRegardless()
 
@@ -106,16 +124,21 @@ final class PanelOverlayManager {
 
     // ── 오버레이 숨김 ────────────────────────────────────────
     func hide() {
-        stopTracking()
+        guard isShowing else { return }
+        isShowing = false
 
-        guard panel.isVisible else { return }
+        stopTracking()
 
         // 페이드아웃 애니메이션
         NSAnimationContext.runAnimationGroup({ context in
             context.duration = 0.1
             panel.animator().alphaValue = 0
         }, completionHandler: { [weak self] in
-            self?.panel.orderOut(nil)
+            guard let self = self else { return }
+            // 페이드아웃이 끝나기 전에 다시 show()가 호출됐다면
+            // 여기서 숨기면 안 된다.
+            guard !self.isShowing else { return }
+            self.panel.orderOut(nil)
         })
     }
 
@@ -152,11 +175,9 @@ final class PanelOverlayManager {
     //    한다. 검사 없는 강제 언래핑은 곧 앱 전체의 크래시를 뜻한다.
     private func getCaretPosition() -> NSPoint? {
         // 1. 현재 포커스된 앱 가져오기
-        let systemWide = AXUIElementCreateSystemWide()
-
         var focusedApp: AnyObject?
         guard AXUIElementCopyAttributeValue(
-            systemWide,
+            systemWideElement,
             kAXFocusedApplicationAttribute as CFString,
             &focusedApp
         ) == .success,
@@ -222,15 +243,21 @@ final class PanelOverlayManager {
 
     // ── 마우스/커서 추적 타이머 ────────────────────────────────
     // 한글 상태일 때 주기적으로 커서 위치를 업데이트한다.
-    // 60fps 수준의 추적은 불필요하므로 30ms 간격이면 충분하다.
+    //
+    // 매 틱마다 임의의 서드파티 앱을 상대로 systemWide AX 질의(프로세스
+    // 간 통신)가 일어난다. 30ms(초당 33회)는 상주 유틸리티가 상시로
+    // 치르기엔 비싼 비용이고, 인디케이터 추적 정확도에 체감 차이도 없어
+    // 100ms로 낮춘다.
+    //
+    // 또한 `.common` 모드로 등록해야 메뉴를 열거나 드래그하는 동안
+    // (eventTracking 모드) 추적이 멈추지 않는다.
     private func startTracking() {
         stopTracking()
-        mouseTrackingTimer = Timer.scheduledTimer(
-            withTimeInterval: 0.03,
-            repeats: true
-        ) { [weak self] _ in
+        let timer = Timer(timeInterval: 0.1, repeats: true) { [weak self] _ in
             self?.updatePosition()
         }
+        RunLoop.main.add(timer, forMode: .common)
+        mouseTrackingTimer = timer
     }
 
     private func stopTracking() {

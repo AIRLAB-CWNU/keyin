@@ -48,7 +48,7 @@ open build/ShiftSpaceMac.app
 2. ShiftSpaceMac을 찾아 토글 활성화
 3. (필요 시) 입력 모니터링도 동일하게 허용
 
-> **Tip:** 개발 중 빌드마다 권한이 초기화되는 경우, 자체 서명 인증서를 사용하면 방지할 수 있습니다. `build.sh app` 실행 시 출력되는 코드 서명 안내를 참고하세요.
+> **Tip:** `build.sh`는 빌드 결과물에 ad-hoc 코드 서명(`codesign --sign -`)을 자동으로 적용해, 빌드할 때마다 접근성 권한이 초기화되는 문제를 줄입니다. 그래도 재승인이 반복된다면 Keychain Access에서 자체 서명 인증서를 만들어 `codesign --force --deep --sign "<인증서 이름>" build/ShiftSpaceMac.app`으로 서명하세요.
 
 ## 📁 프로젝트 구조
 
@@ -59,7 +59,7 @@ Sources/ShiftSpaceMac/
 └── Managers/
     ├── MenuBarManager.swift        # 메뉴바 아이콘/메뉴
     ├── InputMonitorManager.swift   # CGEventTap 전역 키 감지
-    ├── TISSwitchManager.swift      # Carbon TIS 한영 전환
+    ├── TISSwitchManager.swift      # 시스템 단축키 합성으로 입력 소스 전환
     ├── PanelOverlayManager.swift   # NSPanel 투명 오버레이
     ├── PermissionManager.swift     # 접근성 권한 관리
     └── LaunchAgentManager.swift    # 로그인 시 자동 실행
@@ -69,12 +69,31 @@ Sources/ShiftSpaceMac/
 
 | 모듈 | 역할 |
 |------|------|
-| `InputMonitorManager` | CGEventTap으로 Shift+Space 감지, 이벤트 탭 자동 복구 |
-| `TISSwitchManager` | Carbon API로 한영 전환, 백그라운드 버그 시 가상 키코드 Fallback |
-| `PanelOverlayManager` | 투명 NSPanel "한" 인디케이터, AX API 커서 추적 |
+| `InputMonitorManager` | CGEventTap으로 Shift+Space 감지, 자기 합성 이벤트·키 반복 필터링, 이벤트 탭 자동 복구 |
+| `TISSwitchManager` | 시스템 "이전 입력 소스 선택" 단축키를 읽어 가상 키로 재생, 현재 입력 소스가 한글인지 판별 |
+| `PanelOverlayManager` | 투명 NSPanel "한" 인디케이터, AX API 캐럿 추적 (실패 시 마우스 위치 Fallback) |
 | `MenuBarManager` | 메뉴바 UI, 자동 실행 토글 |
 | `PermissionManager` | 접근성 권한 확인/요청 |
 | `LaunchAgentManager` | LaunchAgent plist 등록/해제 |
+
+### 한영 전환은 어떻게 이뤄지나
+
+`TISSelectInputSource`(Carbon)를 **쓰지 않습니다.** 메뉴바 상주(LSUIElement) 앱이 이 API를 호출하면
+시스템 전역 입력 소스와 메뉴바 표시는 바뀌지만 현재 활성 앱의 입력기(IMK) 컨텍스트가 따라오지 않아,
+실제 타이핑은 이전 소스로 처리되는 macOS 버그가 있습니다. 이 상태에서는 `TISCopyCurrentKeyboardInputSource`도
+새 소스를 반환하므로 결과 검증으로 감지할 수도 없습니다.
+
+그래서 대신 **시스템의 "이전 입력 소스 선택" 단축키를 그대로 재생**합니다:
+
+1. `com.apple.symbolichotkeys`의 `AppleSymbolicHotKeys` 딕셔너리에서 key `60`을 읽어
+   사용자가 지정한 단축키를 매 호출마다 조회합니다 (설정을 바꿔도 즉시 반영, 읽기 실패 시 `Ctrl+Space`).
+2. 해당 키 조합을 `CGEvent`로 합성해 **HID 레벨**(`.cghidEventTap`)에 주입합니다.
+   세션 탭에 주입하면 시스템 핫키 처리 단계를 건너뛰어 그냥 스페이스 문자로 전달돼 버립니다.
+3. 합성한 이벤트에는 `eventSourceUserData` 태그를 박아두고, `InputMonitorManager`가 이를 걸러냅니다.
+   그렇지 않으면 사용자가 시스템 단축키를 `Shift+Space`로 지정했을 때 자기 이벤트가 자기 탭을
+   다시 트리거하는 무한 루프가 발생합니다.
+
+`TISCopyCurrentKeyboardInputSource`는 "한" 인디케이터의 표시 여부를 판별하는 용도로만 씁니다.
 
 ## 📝 라이선스
 
