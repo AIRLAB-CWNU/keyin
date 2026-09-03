@@ -13,6 +13,12 @@
 set -euo pipefail
 
 PROJECT_NAME="ShiftSpaceMac"
+# 코드 서명 ID. 기본값 "-"는 ad-hoc 서명으로, 빌드할 때마다 바이너리
+# 해시가 바뀌어 접근성(TCC) 권한이 초기화된다. 개발 인증서 이름을
+# CODESIGN_IDENTITY 환경변수로 넘기면 식별자가 고정되어 권한이 유지된다.
+#   예) export CODESIGN_IDENTITY="Apple Development: Hong Gildong (XXXXXXXXXX)"
+#   사용 가능한 인증서: security find-identity -v -p codesigning
+CODESIGN_IDENTITY="${CODESIGN_IDENTITY:--}"
 BUNDLE_ID="com.keyin.ShiftSpaceMac"
 BUILD_DIR=".build"
 APP_DIR="build/${PROJECT_NAME}.app"
@@ -22,14 +28,14 @@ case "${1:-build}" in
   build)
     echo "🔨 Debug 빌드 중..."
     swift build
-    codesign --force --sign - "${BUILD_DIR}/debug/${PROJECT_NAME}" 2>/dev/null || true
+    codesign --force --sign "${CODESIGN_IDENTITY}" "${BUILD_DIR}/debug/${PROJECT_NAME}" 2>/dev/null || true
     echo "✅ 빌드 완료: ${BUILD_DIR}/debug/${PROJECT_NAME}"
     ;;
 
   run)
     echo "🔨 빌드 후 실행..."
     swift build
-    codesign --force --sign - "${BUILD_DIR}/debug/${PROJECT_NAME}" 2>/dev/null || true
+    codesign --force --sign "${CODESIGN_IDENTITY}" "${BUILD_DIR}/debug/${PROJECT_NAME}" 2>/dev/null || true
     echo "🚀 실행 중..."
     "${BUILD_DIR}/debug/${PROJECT_NAME}"
     ;;
@@ -64,18 +70,23 @@ case "${1:-build}" in
     fi
     cp "Sources/ShiftSpaceMac/Resources/AppIcon.icns" "${APP_DIR}/Contents/Resources/"
 
-    # Ad-hoc 서명 (TCC 권한 식별 안정화)
-    codesign --force --deep --sign - "${APP_DIR}" 2>/dev/null || true
+    # 코드 서명 (TCC 권한 식별 안정화)
+    codesign --force --deep --sign "${CODESIGN_IDENTITY}" "${APP_DIR}"
 
     echo "✅ .app 번들 생성 완료: ${APP_DIR}"
     echo ""
     echo "──────────────────────────────────────────────────"
-    echo "🔏 ad-hoc 코드 서명이 적용되었습니다."
-    echo ""
-    echo "빌드할 때마다 접근성 권한이 계속 초기화된다면,"
-    echo "자체 서명 인증서로 서명하면 TCC가 앱을 안정적으로 식별합니다:"
-    echo ""
-    echo "  codesign --force --deep --sign \"ShiftSpaceMac Dev\" ${APP_DIR}"
+    if [ "${CODESIGN_IDENTITY}" = "-" ]; then
+      echo "🔏 ad-hoc 서명 적용됨."
+      echo ""
+      echo "⚠️  ad-hoc 서명은 빌드할 때마다 바이너리 해시가 바뀌므로"
+      echo "    접근성 권한이 매번 초기화됩니다. 인증서를 지정하세요:"
+      echo ""
+      echo "  security find-identity -v -p codesigning   # 인증서 목록"
+      echo "  export CODESIGN_IDENTITY=\"Apple Development: ...\""
+    else
+      echo "🔏 서명 완료: ${CODESIGN_IDENTITY}"
+    fi
     echo "──────────────────────────────────────────────────"
     ;;
 

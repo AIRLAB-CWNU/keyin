@@ -48,7 +48,23 @@ open build/ShiftSpaceMac.app
 2. ShiftSpaceMac을 찾아 토글 활성화
 3. (필요 시) 입력 모니터링도 동일하게 허용
 
-> **Tip:** `build.sh`는 빌드 결과물에 ad-hoc 코드 서명(`codesign --sign -`)을 자동으로 적용해, 빌드할 때마다 접근성 권한이 초기화되는 문제를 줄입니다. 그래도 재승인이 반복된다면 Keychain Access에서 자체 서명 인증서를 만들어 `codesign --force --deep --sign "<인증서 이름>" build/ShiftSpaceMac.app`으로 서명하세요.
+> **⚠️ 재빌드하면 권한이 풀립니다 — 인증서로 서명하세요.**
+>
+> `build.sh`는 기본적으로 ad-hoc 서명(`codesign --sign -`)을 적용하는데, 이 경우 TCC가 바이너리
+> 해시로 앱을 식별하므로 **재컴파일할 때마다 접근성 권한이 무효가 됩니다.** 목록에 앱 이름이 남아
+> 있어도 실제로는 거부 상태라, 증상은 "Shift+Space가 아무 반응이 없음"으로 나타납니다
+> (이벤트 탭 생성 자체가 실패합니다).
+>
+> 개발 인증서를 지정하면 식별자가 고정되어 이 문제가 사라집니다:
+>
+> ```bash
+> security find-identity -v -p codesigning          # 인증서 목록 확인
+> export CODESIGN_IDENTITY="Apple Development: ..."  # 사용할 인증서
+> ./build.sh app
+> ```
+>
+> 이미 권한이 꼬였다면 초기화 후 다시 승인하세요:
+> `tccutil reset Accessibility com.keyin.ShiftSpaceMac`
 
 ## 📁 프로젝트 구조
 
