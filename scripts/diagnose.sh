@@ -107,16 +107,47 @@ fi
 
 # ── 4. 접근성 권한 ───────────────────────────────────────────
 hdr "4. 접근성 권한 (가장 흔한 원인)"
-echo "  TCC 데이터베이스는 SIP로 보호되어 스크립트가 직접 읽을 수 없습니다."
-echo "  아래를 눈으로 확인해 주세요:"
+
+# 앱이 os.Logger로 남긴 실제 권한 상태를 읽는다. TCC 데이터베이스는
+# SIP로 막혀 있지만, 앱이 스스로 기록한 값은 시스템 로그에서 읽을 수 있다.
+# (zsh에는 log 빌트인이 있어 반드시 /usr/bin/log 로 호출해야 한다)
+LOGOUT="$(/usr/bin/log show --last 30m \
+          --predicate 'subsystem == "com.keyin.ShiftSpaceMac"' \
+          --style compact 2>/dev/null | grep -v '^Timestamp')"
+
+if [ -n "$LOGOUT" ]; then
+  echo "  앱이 남긴 로그:"
+  echo "$LOGOUT" | tail -8 | sed 's/^/     /'
+  echo
+  if echo "$LOGOUT" | grep -q "접근성권한=false"; then
+    bad "앱이 접근성 권한 없음을 보고했습니다 — 이것이 원인입니다"
+  elif echo "$LOGOUT" | grep -q "접근성권한=true"; then
+    ok "접근성 권한 있음"
+    if echo "$LOGOUT" | grep -q "CGEventTap 생성 성공"; then
+      ok "이벤트 탭 생성 성공 — 키 감지는 정상입니다"
+      echo "     여기까지 정상인데 전환이 안 된다면 5번 항목을 보세요."
+    elif echo "$LOGOUT" | grep -q "CGEventTap 생성 실패"; then
+      bad "권한은 있는데 이벤트 탭 생성에 실패했습니다"
+    fi
+  fi
+else
+  warn "앱 로그가 없습니다 — 로깅이 없는 구버전이거나, 아직 실행되지 않았습니다"
+  echo "     최신 빌드로 교체 후 실행하고 다시 시도하세요."
+fi
+
+echo
+echo "  직접 확인하려면:"
 echo "     시스템 설정 → 개인정보 보호 및 보안 → 접근성"
 echo "     • 목록에 ShiftSpaceMac이 있고 토글이 켜져 있는가?"
 echo "     • 목록에 있는데도 안 되면: 항목을 '−'로 삭제 후 '+'로 이 경로를 다시 추가"
 echo "       $APP"
 echo
-echo "  권한이 꼬였을 때 초기화:"
+echo
+echo "  권한이 꼬였을 때 초기화 (초기화 후 앱을 다시 실행하면 요청 창이 뜹니다):"
 echo "     tccutil reset Accessibility $BUNDLE_ID"
-warn "권한 미승인이면 Shift+Space가 '아무 반응 없음'으로 나타납니다 (이벤트 탭 생성 실패)"
+echo
+echo "  실시간으로 보려면 (Shift+Space를 누르며 관찰):"
+echo "     /usr/bin/log stream --predicate 'subsystem == \"$BUNDLE_ID\"' --level debug"
 
 # ── 5. 입력 소스 구성 ────────────────────────────────────────
 hdr "5. 입력 소스 · 시스템 단축키 (이 앱이 의존하는 설정)"

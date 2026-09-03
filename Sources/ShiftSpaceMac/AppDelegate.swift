@@ -22,6 +22,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     // ── 앱 시작 ──────────────────────────────────────────────
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // 실행 환경을 한 줄로 남긴다. 다른 맥에서 동작하지 않을 때
+        // 가장 먼저 확인해야 하는 정보들이다.
+        Log.app.notice(
+            "앱 시작 — 접근성권한=\(AXIsProcessTrusted(), privacy: .public) 경로=\(Bundle.main.bundlePath, privacy: .public)"
+        )
+
         // 1) 매니저 초기화 (의존성 없는 것부터)
         permissionManager = PermissionManager()
         launchAgentManager = LaunchAgentManager()
@@ -43,6 +49,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if permissionManager.checkAccessibilityPermission() {
             startMonitoring()
         } else {
+            Log.app.error("접근성 권한 없음 — Shift+Space가 감지되지 않습니다. 시스템 설정에서 허용이 필요합니다.")
             // 권한이 없으면 안내 후 대기
             permissionManager.requestAccessibilityPermission()
             // 3초마다 권한 재확인
@@ -81,6 +88,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             if self.permissionManager.checkAccessibilityPermission() {
                 timer.invalidate()
                 self.permissionTimer = nil
+                Log.app.notice("접근성 권한 허용됨 — 모니터링을 시작합니다")
                 self.startMonitoring()
             }
         }

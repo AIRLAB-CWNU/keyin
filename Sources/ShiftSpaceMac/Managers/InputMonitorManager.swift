@@ -44,8 +44,10 @@ final class InputMonitorManager {
             callback: InputMonitorManager.eventTapCallback,
             userInfo: userInfo
         ) else {
+            Log.input.error("CGEventTap 생성 실패 — 접근성 권한이 없거나 취소되었을 가능성이 높습니다")
             return
         }
+        Log.input.notice("CGEventTap 생성 성공 — 전역 키 감지 활성")
 
         eventTap = tap
         runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
@@ -78,6 +80,7 @@ final class InputMonitorManager {
         // ⚠️ 안전장치: 이벤트 탭 비활성화 감지 및 재활성화
         // macOS는 콜백 처리가 느리면 이벤트 탭을 자동 비활성화한다.
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+            Log.input.notice("이벤트 탭이 OS에 의해 비활성화됨 (type=\(type.rawValue)) — 재활성화합니다")
             if let tap = mgr.eventTap {
                 CGEvent.tapEnable(tap: tap, enable: true)
             }
@@ -121,6 +124,7 @@ final class InputMonitorManager {
             return nil
         }
 
+        Log.input.debug("Shift+Space 감지 — 전환 요청")
         mgr.onShiftSpaceTriggered()
         return nil  // 이벤트 소비 (Space 입력 차단)
     }

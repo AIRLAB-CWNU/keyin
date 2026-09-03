@@ -86,6 +86,23 @@ open build/ShiftSpaceMac.app
 
 > 이 앱은 공증(notarization)되지 않았습니다. 개인 용도로 직접 빌드해 쓰는 것을 전제로 합니다.
 
+### 로그 확인
+
+앱은 메뉴바 상주 에이전트라 stdout이 어디에도 보이지 않습니다. 대신 `os.Logger`로
+시스템 로그에 남기므로, 어느 맥에서든 아래로 상태를 확인할 수 있습니다.
+
+```bash
+# 시작 시 권한·이벤트 탭 상태 (zsh의 log 빌트인과 겹치므로 절대 경로로 호출)
+/usr/bin/log show --last 10m \
+  --predicate 'subsystem == "com.keyin.ShiftSpaceMac"' --style compact
+
+# Shift+Space를 누르며 실시간 관찰
+/usr/bin/log stream \
+  --predicate 'subsystem == "com.keyin.ShiftSpaceMac"' --level debug
+```
+
+`앱 시작 — 접근성권한=false`가 보이면 권한이 원인입니다.
+
 ## 📁 프로젝트 구조
 
 ```

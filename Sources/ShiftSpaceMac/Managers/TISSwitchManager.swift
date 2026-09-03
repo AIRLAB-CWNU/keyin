@@ -33,27 +33,28 @@ final class TISSwitchManager {
     // ── 현재 입력 소스가 한글인지 확인 ─────────────────────────
     // 인디케이터(오버레이) 표시 여부를 결정하기 위해 사용된다.
     func isCurrentInputSourceKorean() -> Bool {
-        guard let currentSource = TISCopyCurrentKeyboardInputSource() else {
-            return false
-        }
-        let sourceRef = currentSource.takeRetainedValue()
-        guard let sourceIDPtr = TISGetInputSourceProperty(
-            sourceRef,
-            kTISPropertyInputSourceID
-        ) else {
-            return false
-        }
-
-        let sourceID = Unmanaged<CFString>.fromOpaque(sourceIDPtr)
-            .takeUnretainedValue() as String
-
-        return sourceID.hasPrefix(koreanInputSourcePrefix)
+        currentInputSourceID().hasPrefix(koreanInputSourcePrefix)
     }
 
     // ── 입력 소스 토글 ───────────────────────────────────────
     func toggleInputSource() {
         let (virtualKey, modifiers) = systemInputSourceShortcut()
+        logShortcutIfChanged(
+            virtualKey, modifiers,
+            fallback: virtualKey == defaultVirtualKey && modifiers == defaultModifiers
+        )
+        Log.switching.debug("입력 소스 전환 시도 (현재=\(self.currentInputSourceID(), privacy: .public))")
         sendVirtualKey(virtualKey: virtualKey, modifiers: modifiers)
+    }
+
+    /// 현재 입력 소스 ID. 로깅과 한글 판별에 함께 쓰인다.
+    func currentInputSourceID() -> String {
+        guard let currentSource = TISCopyCurrentKeyboardInputSource() else { return "unknown" }
+        let sourceRef = currentSource.takeRetainedValue()
+        guard let ptr = TISGetInputSourceProperty(sourceRef, kTISPropertyInputSourceID) else {
+            return "unknown"
+        }
+        return Unmanaged<CFString>.fromOpaque(ptr).takeUnretainedValue() as String
     }
 
     // ══════════════════════════════════════════════════════════
@@ -78,6 +79,24 @@ final class TISSwitchManager {
     //
     // 사용자가 단축키를 비활성화/삭제했거나 plist를 읽지 못하면 기본값
     // (Ctrl + Space)을 사용한다.
+    /// 마지막으로 로그에 남긴 단축키. 값이 바뀔 때만 기록하기 위한 것으로,
+    /// 키 입력마다 같은 줄이 반복되는 것을 막는다.
+    private var lastLoggedShortcut: (UInt16, UInt64)?
+
+    private func logShortcutIfChanged(_ key: UInt16, _ flags: CGEventFlags, fallback: Bool) {
+        guard lastLoggedShortcut?.0 != key || lastLoggedShortcut?.1 != flags.rawValue else { return }
+        lastLoggedShortcut = (key, flags.rawValue)
+        if fallback {
+            Log.switching.notice(
+                "시스템 '이전 입력 소스 선택' 단축키를 읽지 못했습니다 — 기본값(Ctrl+Space)으로 진행합니다. 시스템 설정에서 이 단축키가 비활성이면 전환이 되지 않습니다."
+            )
+        } else {
+            Log.switching.notice(
+                "사용할 단축키: keyCode=\(key, privacy: .public) flags=0x\(String(flags.rawValue, radix: 16), privacy: .public)"
+            )
+        }
+    }
+
     private func systemInputSourceShortcut() -> (UInt16, CGEventFlags) {
         let domain = "com.apple.symbolichotkeys" as CFString
 
