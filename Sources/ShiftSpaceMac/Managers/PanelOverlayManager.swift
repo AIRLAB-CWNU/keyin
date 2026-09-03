@@ -236,9 +236,37 @@ final class PanelOverlayManager {
     //    NSScreen.main은 "키 윈도우가 있는 화면"이라 키 윈도우가 없는
     //    에이전트 앱에서는 값이 예측 불가하며, 다중 모니터에서 인디케이터가
     //    엉뚱한 위치에 뜨는 원인이 된다.
+    //
+    //    주 화면은 AppKit 전역 좌표계에서 원점이 (0,0)인 화면으로 정의된다.
+    //    NSScreen.screens.first가 그 화면인 것이 일반적이지만 보장되지는
+    //    않으므로, 원점이 (0,0)인 화면을 직접 찾고 없을 때만 first로
+    //    되돌아간다.
     private func convertToScreenCoordinates(_ point: NSPoint) -> NSPoint {
-        guard let primaryScreen = NSScreen.screens.first else { return point }
+        guard let primaryScreen = Self.primaryScreen else { return point }
         return NSPoint(x: point.x, y: primaryScreen.frame.maxY - point.y)
+    }
+
+    private static var primaryScreen: NSScreen? {
+        NSScreen.screens.first { $0.frame.origin == .zero } ?? NSScreen.screens.first
+    }
+
+    /// 화면 구성을 로그에 남긴다. 다중 모니터에서 인디케이터 위치가
+    /// 어긋난다는 제보를 받았을 때, 원격 머신의 배치를 알아야 원인을
+    /// 좁힐 수 있다.
+    func logScreenConfiguration() {
+        let screens = NSScreen.screens
+        let primary = Self.primaryScreen
+        Log.overlay.notice("화면 \(screens.count, privacy: .public)개 연결됨")
+        for (i, screen) in screens.enumerated() {
+            let f = screen.frame
+            let mark = (screen === primary) ? " (주 화면)" : ""
+            Log.overlay.notice(
+                "  [\(i, privacy: .public)] origin=(\(f.origin.x, privacy: .public), \(f.origin.y, privacy: .public)) size=\(f.width, privacy: .public)x\(f.height, privacy: .public)\(mark, privacy: .public)"
+            )
+        }
+        if primary?.frame.origin != .zero {
+            Log.overlay.error("원점이 (0,0)인 화면을 찾지 못했습니다 — 인디케이터 위치가 어긋날 수 있습니다")
+        }
     }
 
     // ── 마우스/커서 추적 타이머 ────────────────────────────────

@@ -65,7 +65,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             object: nil
         )
 
-        // 6) 초기 상태 반영
+        // 6) 화면 구성 변경 감지
+        // 모니터를 붙이거나 떼면 좌표 기준(주 화면)이 바뀔 수 있다.
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(screenConfigurationDidChange),
+            name: NSApplication.didChangeScreenParametersNotification,
+            object: nil
+        )
+        panelOverlayManager.logScreenConfiguration()
+
+        // 7) 초기 상태 반영
         updateOverlayForCurrentInputSource()
     }
 
@@ -106,6 +116,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self?.tisSwitchManager.toggleInputSource()
             // 오버레이 업데이트는 inputSourceDidChange 알림에서 처리
         }
+    }
+
+    // ── 화면 구성 변경 핸들러 ─────────────────────────────────
+    @objc private func screenConfigurationDidChange(_ notification: Notification) {
+        Log.app.notice("화면 구성이 변경되었습니다")
+        panelOverlayManager.logScreenConfiguration()
     }
 
     // ── 입력 소스 변경 알림 핸들러 ────────────────────────────
