@@ -22,6 +22,21 @@ final class MenuBarManager {
         setupStatusItem()
     }
 
+    /// 메뉴 헤더에 표시할 이름과 버전.
+    /// Info.plist에서 읽어오므로 버전을 올릴 때 여기를 함께 고칠 필요가 없다.
+    /// (.app 번들이 아닌 SPM 실행 파일로 직접 띄우면 Info.plist가 없어
+    ///  버전을 알 수 없으므로 이름만 표시한다)
+    private static var versionTitle: String {
+        let name = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String
+            ?? "ShiftSpaceMac"
+        guard let version = Bundle.main.object(
+            forInfoDictionaryKey: "CFBundleShortVersionString"
+        ) as? String else {
+            return name
+        }
+        return "\(name) v\(version)"
+    }
+
     // ── 메뉴바 아이콘 설정 ────────────────────────────────────
     private func setupStatusItem() {
         // NSStatusBar.system에서 가변 길이 아이템 생성
@@ -43,7 +58,7 @@ final class MenuBarManager {
         let menu = NSMenu()
 
         // ─ 헤더
-        let headerItem = NSMenuItem(title: "ShiftSpaceMac v1.0", action: nil, keyEquivalent: "")
+        let headerItem = NSMenuItem(title: Self.versionTitle, action: nil, keyEquivalent: "")
         headerItem.isEnabled = false
         menu.addItem(headerItem)
         menu.addItem(NSMenuItem.separator())
